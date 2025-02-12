@@ -110,7 +110,7 @@ const PricingEstimator = () => {
           if (open) setIsModalOpen(true)
         }}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Enter Keyword to Access</DialogTitle>
             <DialogDescription>Please enter the keyword to access the Pricing Estimator.</DialogDescription>
@@ -232,11 +232,7 @@ const PricingEstimator = () => {
               <p>Additional Instances Fee: {formatCurrency(results.additionalInstancesFee)}</p>
               <p>Total Software Cost: {formatCurrency(results.totalSoftwareCost)}</p>
               <p>Support Costs: {formatCurrency(results.supportCosts)}</p>
-              <p>
-                Discount {/*(
-                {Number.parseInt(contractLength) > 1 ? (Number.parseInt(contractLength) === 2 ? "5%" : "10%") : "0%"})*/}:
-                ({formatCurrency(results.discount)})
-              </p>
+              <p>Discount: {formatCurrency(results.discount)}</p>
               <div className="border-t pt-2 mt-2">
                 <p className="font-bold">Total Annual Cost: {formatCurrency(results.totalAnnualCost)}</p>
               </div>
