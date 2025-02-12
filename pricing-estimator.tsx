@@ -6,7 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogOverlay,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 
@@ -110,7 +117,8 @@ const PricingEstimator = () => {
           if (open) setIsModalOpen(true)
         }}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogOverlay className="bg-black/60" />
+        <DialogContent className="sm:max-w-[425px] bg-sky-100">
           <DialogHeader>
             <DialogTitle>Enter Keyword to Access</DialogTitle>
             <DialogDescription>Please enter the keyword to access the Pricing Estimator.</DialogDescription>
