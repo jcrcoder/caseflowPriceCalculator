@@ -46,12 +46,23 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
+// Helper function to determine instance size category based on TB
+const getTierForTerabytes = (tb: number): keyof typeof INSTANCE_PRICES => {
+  if (tb <= 14) return "1-14 TBs"
+  if (tb <= 29) return "15-29 TBs"
+  if (tb <= 74) return "30-74 TBs"
+  if (tb <= 149) return "75-149 TBs"
+  if (tb <= 300) return "150-300 TBs"
+  return "300+ TBs"
+}
+
 type InstanceSize = keyof typeof INSTANCE_PRICES
 
 const PricingEstimator = () => {
   const [instanceSize, setInstanceSize] = useState<InstanceSize>("1-14 TBs")
   const [totalInstances, setTotalInstances] = useState(1)
   const [contractLength, setContractLength] = useState("1")
+  const [terabytes, setTerabytes] = useState<number | "">(1)
   const [results, setResults] = useState<null | {
     baseSoftwarePrice: number
     additionalInstancesFee: number
@@ -65,9 +76,13 @@ const PricingEstimator = () => {
   const [error, setError] = useState("")
   const [showKeyword, setShowKeyword] = useState(false)
 
+  // Update instance size when terabytes changes
   useEffect(() => {
-    //setIsModalOpen(true)
-  }, [])
+    if (terabytes !== "") {
+      const tier = getTierForTerabytes(terabytes)
+      setInstanceSize(tier)
+    }
+  }, [terabytes])
 
   const calculatePricing = () => {
     if (instanceSize in INSTANCE_PRICES) {
@@ -107,6 +122,18 @@ const PricingEstimator = () => {
 
   const toggleKeywordVisibility = () => {
     setShowKeyword(!showKeyword)
+  }
+
+  const handleTerabytesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (value === "") {
+      setTerabytes("")
+    } else {
+      const numValue = parseInt(value, 10)
+      if (!isNaN(numValue) && numValue > 0) {
+        setTerabytes(numValue)
+      }
+    }
   }
 
   return (
@@ -165,19 +192,24 @@ const PricingEstimator = () => {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Instance Size</label>
-              <Select onValueChange={(value) => setInstanceSize(value as InstanceSize)} value={instanceSize}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select instance size" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(INSTANCE_PRICES).map((size) => (
-                    <SelectItem key={size} value={size}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Total Terabytes</label>
+              <Input
+                type="number"
+                placeholder="Enter total TB"
+                value={terabytes}
+                onChange={handleTerabytesChange}
+                min="1"
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Instance Size Tier</label>
+              <div className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background flex items-center text-sm">
+                {instanceSize}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Size tier automatically selected based on TB value
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Total Instances</label>
@@ -253,4 +285,3 @@ const PricingEstimator = () => {
 }
 
 export default PricingEstimator
-
