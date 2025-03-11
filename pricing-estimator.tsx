@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect,useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -89,15 +89,16 @@ const PricingEstimator = () => {
   const [error, setError] = useState("")
   const [showKeyword, setShowKeyword] = useState(false)
 
-  // Update instance size when terabytes changes
   useEffect(() => {
     if (terabytes !== "") {
       const tier = getTierForTerabytes(terabytes)
       setInstanceSize(tier)
+      calculatePricing()
     }
-  }, [terabytes])
+  }, [terabytes, instanceSize, totalInstances, contractLength])
 
-  const calculatePricing = () => {
+  // Function to calculate pricing
+  const calculatePricing = useCallback(() => {
     if (instanceSize in INSTANCE_PRICES && terabytes !== "") {
       // Get tier base price and additional TB cost
       const tierData = INSTANCE_PRICES[instanceSize]
@@ -132,7 +133,7 @@ const PricingEstimator = () => {
     } else {
       console.error("Invalid instance size selected or TB value empty")
     }
-  }
+  }, [instanceSize, terabytes, totalInstances, contractLength])
 
   const handleKeywordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -257,6 +258,7 @@ const PricingEstimator = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">Contract Length</label>
               <RadioGroup
                 defaultValue="1"
+                value={contractLength}
                 onValueChange={(value) => setContractLength(value)}
                 className="flex space-x-2"
               >
@@ -278,9 +280,6 @@ const PricingEstimator = () => {
                 ))}
               </RadioGroup>
             </div>
-            <Button onClick={calculatePricing} className="w-full">
-              Calculate
-            </Button>
           </div>
         </CardContent>
       </Card>
