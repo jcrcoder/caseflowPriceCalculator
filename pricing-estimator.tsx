@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {
@@ -15,7 +15,8 @@ import {
   DialogOverlay,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { EyeIcon, EyeOffIcon } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
+import { EyeIcon, EyeOffIcon, ServerIcon, HardDriveIcon, CalendarIcon } from "lucide-react"
 
 // Constants for pricing
 const INSTANCE_PRICES = {
@@ -74,8 +75,9 @@ type InstanceSize = keyof typeof INSTANCE_PRICES
 const PricingEstimator = () => {
   const [instanceSize, setInstanceSize] = useState<InstanceSize>("1-14 TBs")
   const [totalInstances, setTotalInstances] = useState(1)
+  const [sliderValue, setSliderValue] = useState(1)
   const [contractLength, setContractLength] = useState("1")
-  const [terabytes, setTerabytes] = useState<number | "">(1)
+  const [terabytes, setTerabytes] = useState<number | "">("")
   const [results, setResults] = useState<null | {
     baseSoftwarePrice: number
     additionalInstancesFee: number
@@ -96,6 +98,11 @@ const PricingEstimator = () => {
       setInstanceSize(tier)
     }
   }, [terabytes])
+
+  // Handle slider changes to update total instances
+  useEffect(() => {
+    setTotalInstances(sliderValue);
+  }, [sliderValue]);
 
   // Calculate prices automatically when any input changes
   useEffect(() => {
@@ -214,106 +221,149 @@ const PricingEstimator = () => {
       </Dialog>
 
       <h1 className="text-2xl font-bold mb-4">Pricing Estimator</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Your Options</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Total Terabytes</label>
-              <Input
-                type="number"
-                placeholder="Enter total TB"
-                value={terabytes}
-                onChange={handleTerabytesChange}
-                min="1"
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Instance Size Tier</label>
-              <div className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background flex items-center text-sm">
-                {instanceSize}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Size tier automatically selected based on TB value
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Total Instances</label>
-              <Select
-                onValueChange={(value) => setTotalInstances(Number.parseInt(value))}
-                value={totalInstances.toString()}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select total instances" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[...Array(10)].map((_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {i + 1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Contract Length</label>
-              <RadioGroup
-                defaultValue="1"
-                onValueChange={(value) => setContractLength(value)}
-                className="flex space-x-2"
-              >
-                {[1, 3, 5].map((year) => (
-                  <div key={year}>
-                    <RadioGroupItem value={year.toString()} id={`contract-${year}`} className="peer sr-only" />
-                    <Label
-                      htmlFor={`contract-${year}`}
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-green-100 [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-green-100 h-20"
-                    >
-                      <span className="text-center">
-                        {year} Year{year > 1 ? "s" : ""}
-                      </span>
-                      <span className="text-xs text-center">
-                        {year > 1 ? `(${CONTRACT_DISCOUNTS[year as keyof typeof CONTRACT_DISCOUNTS] * 100}% off)` : ""}
-                      </span>
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {results && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Price Breakdown</CardTitle>
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="md:col-span-1 bg-slate-50 border-2 border-slate-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl text-blue-700 flex items-center gap-2">
+              <HardDriveIcon className="h-5 w-5" /> Input Parameters
+            </CardTitle>
+            <CardDescription>Adjust your storage requirements below</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p>Base Software Price: {formatCurrency(results.baseSoftwarePrice)}</p>
-              <div className="text-xs text-muted-foreground ml-4">
-                <p>- Tier base price: {formatCurrency(INSTANCE_PRICES[instanceSize].basePrice)}</p>
-                {terabytes !== "" && (
-                  <p>- Additional TB cost ({Math.max(0, terabytes - getMinTBForTier(instanceSize))} TB × {formatCurrency(INSTANCE_PRICES[instanceSize].costPerAdditionalTB)}): 
-                    {formatCurrency(Math.max(0, terabytes - getMinTBForTier(instanceSize)) * INSTANCE_PRICES[instanceSize].costPerAdditionalTB)}
-                  </p>
-                )}
+            <div className="space-y-6">
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                  <HardDriveIcon className="h-4 w-4" /> Total Terabytes
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Enter total TB (e.g., 10)"
+                  value={terabytes}
+                  onChange={handleTerabytesChange}
+                  min="1"
+                  className="w-full focus:ring-2 focus:ring-blue-300"
+                />
               </div>
-              <p>Additional Instances Fee: {formatCurrency(results.additionalInstancesFee)}</p>
-              <p>Total Software Cost: {formatCurrency(results.totalSoftwareCost)}</p>
-              <p>Support Costs: {formatCurrency(results.supportCosts)}</p>
-              <p>Discount: {formatCurrency(results.discount)}</p>
-              <div className="border-t pt-2 mt-2">
-                <p className="font-bold">Total Annual Cost: {formatCurrency(results.totalAnnualCost)}</p>
+              
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Instance Size Tier</label>
+                <div className="w-full h-10 px-3 py-2 rounded-md border border-input bg-slate-100 flex items-center text-sm font-medium">
+                  {instanceSize}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 italic">
+                  Size tier is automatically determined by TB value
+                </p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-1">
+                  <ServerIcon className="h-4 w-4" /> Total Instances: <span className="ml-2 text-blue-600 font-semibold">{sliderValue}</span>
+                </label>
+                <Slider
+                  value={[sliderValue]}
+                  min={1}
+                  max={25}
+                  step={1}
+                  onValueChange={(value) => setSliderValue(value[0])}
+                  className="py-4"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>1</span>
+                  <span>25</span>
+                </div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-1">
+                  <CalendarIcon className="h-4 w-4" /> Contract Length
+                </label>
+                <RadioGroup
+                  defaultValue="1"
+                  onValueChange={(value) => setContractLength(value)}
+                  className="flex space-x-2"
+                >
+                  {[1, 3, 5].map((year) => (
+                    <div key={year} className="flex-1">
+                      <RadioGroupItem value={year.toString()} id={`contract-${year}`} className="peer sr-only" />
+                      <Label
+                        htmlFor={`contract-${year}`}
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-slate-200 bg-white p-4 hover:bg-blue-50 hover:border-blue-200 peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 [&:has([data-state=checked])]:bg-blue-50 h-20"
+                      >
+                        <span className="text-center font-medium">
+                          {year} Year{year > 1 ? "s" : ""}
+                        </span>
+                        <span className="text-xs text-center mt-1">
+                          {year > 1 ? `(${CONTRACT_DISCOUNTS[year as keyof typeof CONTRACT_DISCOUNTS] * 100}% off)` : "No discount"}
+                        </span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </div>
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {results ? (
+          <Card className="md:col-span-1 bg-blue-50 border-2 border-blue-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl text-blue-700">Price Breakdown</CardTitle>
+              <CardDescription>Based on your selected parameters</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 bg-white p-5 rounded-lg shadow-sm">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium">Base Software Price:</span>
+                  <span className="text-lg font-semibold">{formatCurrency(results.baseSoftwarePrice)}</span>
+                </div>
+                <div className="text-sm text-slate-600 ml-4 space-y-1 bg-slate-50 p-3 rounded">
+                  <div className="flex justify-between">
+                    <span>Tier base price:</span>
+                    <span>{formatCurrency(INSTANCE_PRICES[instanceSize].basePrice)}</span>
+                  </div>
+                  {terabytes !== "" && (
+                    <div className="flex justify-between">
+                      <span>Additional TB cost ({Math.max(0, terabytes - getMinTBForTier(instanceSize))} TB × {formatCurrency(INSTANCE_PRICES[instanceSize].costPerAdditionalTB)}):</span>
+                      <span>{formatCurrency(Math.max(0, terabytes - getMinTBForTier(instanceSize)) * INSTANCE_PRICES[instanceSize].costPerAdditionalTB)}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium">Additional Instances Fee:</span>
+                  <span className="text-lg">{formatCurrency(results.additionalInstancesFee)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium">Total Software Cost:</span>
+                  <span className="text-lg">{formatCurrency(results.totalSoftwareCost)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium">Support Costs:</span>
+                  <span className="text-lg">{formatCurrency(results.supportCosts)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center border-b pb-2">
+                  <span className="font-medium">Discount:</span>
+                  <span className="text-lg text-green-600">-{formatCurrency(results.discount)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center pt-2 mt-2 bg-blue-100 p-3 rounded-lg">
+                  <span className="font-bold text-lg">Total Annual Cost:</span>
+                  <span className="font-bold text-2xl text-blue-800">{formatCurrency(results.totalAnnualCost)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="md:col-span-1 bg-slate-100 border-2 border-slate-200 flex items-center justify-center">
+            <CardContent className="text-center p-8">
+              <p className="text-slate-500">Enter your parameters to see pricing details</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
