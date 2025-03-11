@@ -97,6 +97,11 @@ const PricingEstimator = () => {
     }
   }, [terabytes])
 
+  // Calculate prices automatically when any input changes
+  useEffect(() => {
+    calculatePricing();
+  }, [terabytes, totalInstances, contractLength, instanceSize]);
+
   const calculatePricing = () => {
     if (instanceSize in INSTANCE_PRICES && terabytes !== "") {
       // Get tier base price and additional TB cost
@@ -278,14 +283,11 @@ const PricingEstimator = () => {
                 ))}
               </RadioGroup>
             </div>
-            <Button onClick={calculatePricing} className="w-full">
-              Calculate
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-                {results && (
+      {results && (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>Price Breakdown</CardTitle>
