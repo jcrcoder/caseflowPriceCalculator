@@ -111,8 +111,10 @@ const PricingEstimator = () => {
       const baseSoftwarePrice = tierData.basePrice + additionalTBCost
       const additionalInstancesFee = totalInstances > 1 ? (totalInstances - 1) * ADDITIONAL_INSTANCE_FEE : 0
 
+      // Support costs are calculated only on the base software price, not including additional instance fees
+      const supportCosts = baseSoftwarePrice * SUPPORT_COST_PERCENTAGE
+      
       const totalSoftwareCost = baseSoftwarePrice + additionalInstancesFee
-      const supportCosts = totalSoftwareCost * SUPPORT_COST_PERCENTAGE
       const subtotal = totalSoftwareCost + supportCosts
 
       const discountRate = CONTRACT_DISCOUNTS[Number.parseInt(contractLength) as keyof typeof CONTRACT_DISCOUNTS]
