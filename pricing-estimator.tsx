@@ -19,12 +19,12 @@ import { EyeIcon, EyeOffIcon } from "lucide-react"
 
 // Constants for pricing
 const INSTANCE_PRICES = {
-  "1-14 TBs": 12100,
-  "15-29 TBs": 16500,
-  "30-74 TBs": 23100,
-  "75-149 TBs": 36300,
-  "150-300 TBs": 49500,
-  "300+ TBs": 82500,
+  "1-14 TBs": { basePrice: 12100, costPerAdditionalTB: 400 },
+  "15-29 TBs": { basePrice: 16500, costPerAdditionalTB: 375 },
+  "30-74 TBs": { basePrice: 23100, costPerAdditionalTB: 300 },
+  "75-149 TBs": { basePrice: 36300, costPerAdditionalTB: 250 },
+  "150-300 TBs": { basePrice: 49500, costPerAdditionalTB: 200 },
+  "300+ TBs": { basePrice: 82500, costPerAdditionalTB: 150 }, // Assumed value for 300+ tier
 }
 
 const SUPPORT_COST_PERCENTAGE = 0.25 // 25% of total software cost
@@ -32,8 +32,8 @@ const ADDITIONAL_INSTANCE_FEE = 2500 // Fee for each additional instance
 
 const CONTRACT_DISCOUNTS = {
   1: 0,
-  2: 0.05, // 5% discount for 2 years
-  3: 0.1, // 10% discount for 3 years
+  3: 0.05, // 5% discount for 3 years
+  5: 0.1, // 10% discount for 5 years
 }
 
 // Helper function for currency formatting
@@ -54,6 +54,19 @@ const getTierForTerabytes = (tb: number): keyof typeof INSTANCE_PRICES => {
   if (tb <= 149) return "75-149 TBs"
   if (tb <= 300) return "150-300 TBs"
   return "300+ TBs"
+}
+
+// Helper function to get the minimum TB value for a tier
+const getMinTBForTier = (tier: keyof typeof INSTANCE_PRICES): number => {
+  switch(tier) {
+    case "1-14 TBs": return 1;
+    case "15-29 TBs": return 15;
+    case "30-74 TBs": return 30;
+    case "75-149 TBs": return 75;
+    case "150-300 TBs": return 150;
+    case "300+ TBs": return 300;
+    default: return 1;
+  }
 }
 
 type InstanceSize = keyof typeof INSTANCE_PRICES
@@ -85,8 +98,17 @@ const PricingEstimator = () => {
   }, [terabytes])
 
   const calculatePricing = () => {
-    if (instanceSize in INSTANCE_PRICES) {
-      const baseSoftwarePrice = INSTANCE_PRICES[instanceSize]
+    if (instanceSize in INSTANCE_PRICES && terabytes !== "") {
+      // Get tier base price and additional TB cost
+      const tierData = INSTANCE_PRICES[instanceSize]
+      
+      // Calculate additional TB cost based on actual TB value
+      const minTBInTier = getMinTBForTier(instanceSize)
+      const additionalTBs = Math.max(0, terabytes - minTBInTier)
+      const additionalTBCost = additionalTBs * tierData.costPerAdditionalTB
+      
+      // Calculate total software price
+      const baseSoftwarePrice = tierData.basePrice + additionalTBCost
       const additionalInstancesFee = totalInstances > 1 ? (totalInstances - 1) * ADDITIONAL_INSTANCE_FEE : 0
 
       const totalSoftwareCost = baseSoftwarePrice + additionalInstancesFee
@@ -106,7 +128,7 @@ const PricingEstimator = () => {
         totalAnnualCost,
       })
     } else {
-      console.error("Invalid instance size selected")
+      console.error("Invalid instance size selected or TB value empty")
     }
   }
 
@@ -236,7 +258,7 @@ const PricingEstimator = () => {
                 onValueChange={(value) => setContractLength(value)}
                 className="flex space-x-2"
               >
-                {[1, 2, 3].map((year) => (
+                {[1, 3, 5].map((year) => (
                   <div key={year}>
                     <RadioGroupItem value={year.toString()} id={`contract-${year}`} className="peer sr-only" />
                     <Label
@@ -261,7 +283,7 @@ const PricingEstimator = () => {
         </CardContent>
       </Card>
 
-      {results && (
+                {results && (
         <Card className="mt-4">
           <CardHeader>
             <CardTitle>Price Breakdown</CardTitle>
@@ -269,6 +291,14 @@ const PricingEstimator = () => {
           <CardContent>
             <div className="space-y-2">
               <p>Base Software Price: {formatCurrency(results.baseSoftwarePrice)}</p>
+              <div className="text-xs text-muted-foreground ml-4">
+                <p>- Tier base price: {formatCurrency(INSTANCE_PRICES[instanceSize].basePrice)}</p>
+                {terabytes !== "" && (
+                  <p>- Additional TB cost ({Math.max(0, terabytes - getMinTBForTier(instanceSize))} TB × {formatCurrency(INSTANCE_PRICES[instanceSize].costPerAdditionalTB)}): 
+                    {formatCurrency(Math.max(0, terabytes - getMinTBForTier(instanceSize)) * INSTANCE_PRICES[instanceSize].costPerAdditionalTB)}
+                  </p>
+                )}
+              </div>
               <p>Additional Instances Fee: {formatCurrency(results.additionalInstancesFee)}</p>
               <p>Total Software Cost: {formatCurrency(results.totalSoftwareCost)}</p>
               <p>Support Costs: {formatCurrency(results.supportCosts)}</p>
