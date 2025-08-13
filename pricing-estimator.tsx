@@ -33,8 +33,8 @@ const ADDITIONAL_INSTANCE_FEE = 2500 // Fee for each additional instance
 
 const CONTRACT_DISCOUNTS = {
   1: 0,
-  3: 0.05, // 5% discount for 3 years
-  5: 0.1, // 10% discount for 5 years
+  3: 0.1, // 10% discount for 3 years
+  5: 0.15, // 15% discount for 5 years
 }
 
 // Helper function for currency formatting
